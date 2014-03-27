@@ -1,0 +1,23 @@
+Adding "-eudyptula" to EXTRAVERSION
+
+vosipov@ubuntu:~$ uname -r
+3.14.0-rc7-eudyptula-00059-g08edb33-dirty
+
+
+[    0.000000] Linux version 3.14.0-rc7-eudyptula-00059-g08edb33-dirty (vosipov@ubuntu) (gcc version 4.6.3 (Ubuntu/Linaro 4.6.3-1ubuntu5) ) #2 SMP Sun Mar 23 12:41:18 EST 2014
+[    0.000000] Command line: BOOT_IMAGE=/boot/vmlinuz-3.14.0-rc7-eudyptula-00059-g08edb33-dirty root=UUID=d8a1ba98-754c-4ae5-8927-d9442df40638 ro clocksource=hpet quiet splash
+
+
+Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
+
+--- linux/Makefile.orig	2014-03-23 12:30:53.788719479 +1100
++++ linux/Makefile	2014-03-23 12:31:25.502230836 +1100
+@@ -1,7 +1,7 @@
+ VERSION = 3
+ PATCHLEVEL = 14
+ SUBLEVEL = 0
+-EXTRAVERSION = -rc7
++EXTRAVERSION = -rc7-eudyptula
+ NAME = Shuffling Zombie Juror
+ 
+ # *DOCUMENTATION*
