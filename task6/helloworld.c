@@ -2,24 +2,21 @@
 #include <linux/miscdevice.h>
 #include <linux/fs.h>
 #include <linux/poll.h>
-#include <linux/slab.h>
 #include <linux/errno.h>
 
 #define MY_ID "7c1caf2f50d1"
-#define MY_ID_LEN 13		/* ID length including the final NULL */
+#define MY_ID_LEN 13	/* ID length including the final NULL */
 
 static ssize_t hello_read(struct file *file, char __user *buf,
 			size_t count, loff_t *ppos)
 {
 	char *hello_str = MY_ID;
 
-	if (count < MY_ID_LEN)
-		return -EINVAL;
-
 	if (*ppos != 0)
 		return 0;
 
-	if (copy_to_user(buf, hello_str, MY_ID_LEN))
+	if ((count < MY_ID_LEN) ||
+		(copy_to_user(buf, hello_str, MY_ID_LEN)))
 		return -EINVAL;
 
 	*ppos += count;
@@ -32,15 +29,9 @@ static ssize_t hello_write(struct file *file, char const __user *buf,
 	char *hello_str = MY_ID;
 	char input[MY_ID_LEN];
 
-	*ppos += count;
-
-	if (count != MY_ID_LEN)
-		return -EINVAL;
-
-	if (copy_from_user(input, buf, MY_ID_LEN))
-		return -EINVAL;
-
-	if (strncmp(hello_str, input, MY_ID_LEN - 1))
+	if ((count != MY_ID_LEN) ||
+		(copy_from_user(input, buf, MY_ID_LEN)) ||
+		(strncmp(hello_str, input, MY_ID_LEN - 1)))
 		return -EINVAL;
 	else
 		return count;
