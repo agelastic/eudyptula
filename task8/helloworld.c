@@ -5,7 +5,6 @@
 #include <asm/page.h>
 #include <linux/debugfs.h>
 #include <linux/jiffies.h>
-#include <linux/slab.h>
 #include <linux/rwsem.h>
 
 #define MY_ID "7c1caf2f50d1\n"
@@ -120,7 +119,7 @@ fail:	pr_alert("Could not create devices");
 	return -ENODEV;
 }
 
-static void hello_exit(void)
+static void __exit hello_exit(void)
 {
 	debugfs_remove_recursive(eudy);
 }

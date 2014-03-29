@@ -49,7 +49,7 @@ static struct miscdevice hello_dev = {
 	&hello_fops
 };
 
-static int hello_init(void)
+static int __init hello_init(void)
 {
 	int ret;
 
@@ -59,7 +59,7 @@ static int hello_init(void)
 	return ret;
 }
 
-static void hello_exit(void)
+static void __exit hello_exit(void)
 {
 	misc_deregister(&hello_dev);
 }
