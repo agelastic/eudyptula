@@ -1,0 +1,4 @@
+On my Ubuntu debugfs is mounted as 0700, I had to remount it to be able to do what the task requires.
+
+$ sudo mount -t debugfs none /sys/kernel/debug/ -o users
+
