@@ -130,4 +130,4 @@ module_exit(hello_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("7c1caf2f50d1");
-MODULE_DESCRIPTION("Misc char hello world module");
+MODULE_DESCRIPTION("Debugfs module");
