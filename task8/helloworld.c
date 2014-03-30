@@ -28,8 +28,8 @@ static ssize_t foo_read(struct file *file, char __user *buf,
 
 	if (copy_to_user(buf, foo_data, foo_len))
 		retval = -EINVAL;
-
-	*ppos += count;
+	else
+		*ppos += count;
 	up_read(&foo_sem);
 
 	return retval;
@@ -39,6 +39,9 @@ static ssize_t foo_write(struct file *file, char const __user *buf,
 			size_t count, loff_t *ppos)
 {
 	int retval = 0;
+
+	if (count > PAGE_SIZE)
+		return -EINVAL;
 
 	down_write(&foo_sem);
 

@@ -9,3 +9,9 @@ echo "7c1caf2f50d1" > /sys/kernel/debug/eudyptula/id
 echo $?
 sudo sh -c "echo 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx' > /sys/kernel/debug/eudyptula/foo"
 cat /sys/kernel/debug/eudyptula/foo
+
+sudo su -
+
+python -c 'print "A"*8191' > /sys/kernel/debug/eudyptula/foo
+python -c 'print "A"*8192' > /sys/kernel/debug/eudyptula/foo
+
