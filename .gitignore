@@ -21,6 +21,7 @@
 *.i
 *.lst
 *.symtypes
+*.symvers
 *.order
 modules.builtin
 *.elf
