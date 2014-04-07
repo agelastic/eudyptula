@@ -2,15 +2,14 @@
 #include <linux/fs.h>
 #include <linux/poll.h>
 #include <linux/errno.h>
-#include <asm/page.h>
 #include <linux/debugfs.h>
 #include <linux/jiffies.h>
-#include <linux/rwsem.h>
+#include <linux/semaphore.h>
 
 #define MY_ID "7c1caf2f50d1\n"
 #define MY_ID_LEN 13	/* MY_ID length */
 
-static DECLARE_RWSEM(foo_sem); /* A spinlock would work too */
+static DEFINE_SEMAPHORE(foo_sem);
 
 static char foo_data[PAGE_SIZE];
 static int foo_len;
@@ -19,41 +18,41 @@ static struct dentry *eudy;
 static ssize_t foo_read(struct file *file, char __user *buf,
 			size_t count, loff_t *ppos)
 {
-	int retval = count;
+	int retval = -EINVAL;
 
 	if (*ppos != 0)
 		return 0;
 
-	down_read(&foo_sem);
+	down(&foo_sem);
 
-	if (copy_to_user(buf, foo_data, foo_len))
-		retval = -EINVAL;
-	else
+	if (!copy_to_user(buf, foo_data, foo_len)) {
 		*ppos += count;
-	up_read(&foo_sem);
+		retval = count;
+	}
 
+	up(&foo_sem);
 	return retval;
 }
 
 static ssize_t foo_write(struct file *file, char const __user *buf,
 			size_t count, loff_t *ppos)
 {
-	int retval = 0;
+	int retval = -EINVAL;
+	pr_debug("requested %d write\n", count);
 
-	if (count > PAGE_SIZE)
+	if (count >= PAGE_SIZE)
 		return -EINVAL;
 
-	down_write(&foo_sem);
+	down(&foo_sem);
 
 	if (copy_from_user(foo_data, buf, count)) {
 		foo_len = 0;
-		retval = -EINVAL;
 	} else {
 		foo_len = count;
 		retval = count;
 	}
 
-	up_write(&foo_sem);
+	up(&foo_sem);
 	return retval;
 }
 
@@ -108,7 +107,7 @@ static int __init hello_init(void)
 	if (!debugfs_create_file("foo", 0644, eudy, NULL, &foo_fops))
 		goto fail;
 
-	if (!debugfs_create_u32("jiffies", 0444, eudy, (u32 *) &jiffies))
+	if (!debugfs_create_u32("jiffies", 0444, eudy, (u32*)&jiffies))
 		goto fail;
 
 	if (!debugfs_create_file("id", 0666, eudy, NULL, &id_fops))
