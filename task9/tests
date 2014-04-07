@@ -1,17 +1,15 @@
-sudo umount /sys/kernel/debug/
-sudo mount -t debugfs none /sys/kernel/debug/ -o users
-ls -la /sys/kernel/debug/eudyptula/
-cat /sys/kernel/debug/eudyptula/jiffies
-cat /sys/kernel/debug/eudyptula/jiffies
-cat /sys/kernel/debug/eudyptula/id
-echo "asdf" > /sys/kernel/debug/eudyptula/id
-echo "7c1caf2f50d1" > /sys/kernel/debug/eudyptula/id
+ls -la /sys/kernel/eudyptula/
+cat /sys/kernel/eudyptula/jiffies
+cat /sys/kernel/eudyptula/jiffies
+cat /sys/kernel/eudyptula/id
+echo "asdf" > /sys/kernel/eudyptula/id
+echo "7c1caf2f50d1" > /sys/kernel/eudyptula/id
 echo $?
-sudo sh -c "echo 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx' > /sys/kernel/debug/eudyptula/foo"
-cat /sys/kernel/debug/eudyptula/foo
+sudo sh -c "echo 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx' > /sys/kernel/eudyptula/foo"
+cat /sys/kernel/eudyptula/foo
 
 sudo su -
 
-python -c 'print "A"*8191' > /sys/kernel/debug/eudyptula/foo
-python -c 'print "A"*8192' > /sys/kernel/debug/eudyptula/foo
+python -c 'print "A"*4095' > /sys/kernel/eudyptula/foo
+python -c 'print "A"*5000' > /sys/kernel/eudyptula/foo
 
