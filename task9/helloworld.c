@@ -114,4 +114,4 @@ module_exit(hello_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Vitaly Osipov <vitaly.osipov@gmail.com>");
-MODULE_DESCRIPTION("Debugfs module");
+MODULE_DESCRIPTION("Sysfs module");
