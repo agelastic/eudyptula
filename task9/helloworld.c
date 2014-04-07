@@ -2,7 +2,7 @@
 #include <linux/fs.h>
 #include <linux/poll.h>
 #include <linux/errno.h>
-#include <linux/debugfs.h>
+#include <linux/kobject.h>
 #include <linux/jiffies.h>
 #include <linux/semaphore.h>
 
@@ -10,11 +10,63 @@
 #define MY_ID_LEN 13	/* MY_ID length */
 
 static DEFINE_SEMAPHORE(foo_sem);
-
 static char foo_data[PAGE_SIZE];
 static int foo_len;
-static struct dentry *eudy;
 
+static struct kobject *hello_kobj;
+
+static ssize_t foo_show(struct kobject *kobj, struct kobj_attribute *attr,
+			char *buf)
+{//FIXME
+}
+
+static ssize_t foo_store(struct kobject *kobj, struct kobj_attribute *attr,
+			const char *buf, size_t count)
+{
+//FIXME
+}
+
+static ssize_t id_show(struct kobject *kobj, struct kobj_attribute *attr,
+			char *buf)
+{//FIXME
+}
+
+static ssize_t id_store(struct kobject *kobj, struct kobj_attribute *attr,
+			const char *buf, size_t count)
+{
+//FIXME
+}
+static ssize_t jiffies_show(struct kobject *kobj, struct kobj_attribute *attr,
+			char *buf)
+{//FIXME
+}
+
+static ssize_t jiffies_store(struct kobject *kobj, struct kobj_attribute *attr,
+			const char *buf, size_t count)
+{
+//FIXME
+}
+
+static struct kobj_attribute foo_attribute = 
+	__ATTR(foo, 0644, foo_show, foo_store);
+static struct kobj_attribute id_attribute = 
+	__ATTR(id, 0666, id_show, id_store);
+static struct kobj_attribute jiffies_attribute = 
+	__ATTR(jiffies, 0444, jiffies_show, jiffies_store);
+
+static struct attribute *attrs[] = {
+	&foo_attribute.attr,
+	&id_attribute.attr,
+	&jiffies_attribute.attr,
+	NULL,
+};
+
+static struct attribute_group hello_group = {
+	.attrs = attrs,
+};
+
+
+/*
 static ssize_t foo_read(struct file *file, char __user *buf,
 			size_t count, loff_t *ppos)
 {
@@ -97,37 +149,31 @@ static const struct file_operations id_fops = {
 	.write = id_write
 };
 
+*/
 static int __init hello_init(void)
 {
-	eudy = debugfs_create_dir("eudyptula", NULL);
-	if (!eudy)
-		goto fail;
+	int retval;
 
-	if (!debugfs_create_file("foo", 0644, eudy, NULL, &foo_fops))
-		goto fail;
+	hello_kobj = kobject_create_and_add("eudyptula", kernel_kobj);
+	if (!hello_kobj)
+		return -ENOMEM;
 
-	if (!debugfs_create_u32("jiffies", 0444, eudy, (u32*)&jiffies))
-		goto fail;
-
-	if (!debugfs_create_file("id", 0666, eudy, NULL, &id_fops))
-		goto fail;
+	retval = sysfs_create_group(hello_kobj, &hello_group);
+	if (retval)
+		kobject_put(hello_kobj);
 
 	pr_debug("Hello World!\n");
-	foo_len = 0;
-	return 0;
-
-fail:	pr_alert("Could not create devices");
-	return -ENODEV;
+	return retval;
 }
 
 static void __exit hello_exit(void)
 {
-	debugfs_remove_recursive(eudy);
+	kobject_put(hello_kobj);
 }
 
 module_init(hello_init);
 module_exit(hello_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("7c1caf2f50d1");
+MODULE_AUTHOR("Vitaly Osipov <vitaly.osipov@gmail.com>");
 MODULE_DESCRIPTION("Debugfs module");
