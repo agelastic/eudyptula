@@ -1,4 +1,4 @@
-From cc1e1bca15ac7db423a69ef4369f8cf8b1ca4370 Mon Sep 17 00:00:00 2001
+From b37c98ddd1b8cd471d02d48102f0f917f271ea0a Mon Sep 17 00:00:00 2001
 From: Vitaly Osipov <vitaly.osipov@gmail.com>
 Date: Sat, 12 Apr 2014 21:25:52 +1000
 Subject: [PATCH] Adding id sysfs attribute to FTDI serial driver
@@ -7,11 +7,11 @@ A new attribute, only for FT232RL FTDI chips. Functionality ported from the earl
 
 Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
 ---
- drivers/usb/serial/ftdi_sio.c |   30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ drivers/usb/serial/ftdi_sio.c |   29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
 diff --git a/drivers/usb/serial/ftdi_sio.c b/drivers/usb/serial/ftdi_sio.c
-index 44ab129..4bf5853 100644
+index 44ab129..3785076 100644
 --- a/drivers/usb/serial/ftdi_sio.c
 +++ b/drivers/usb/serial/ftdi_sio.c
 @@ -50,6 +50,9 @@
@@ -53,14 +53,13 @@ index 44ab129..4bf5853 100644
  static int create_sysfs_attrs(struct usb_serial_port *port)
  {
  	struct ftdi_private *priv = usb_get_serial_port_data(port);
-@@ -1645,6 +1670,11 @@ static int create_sysfs_attrs(struct usb_serial_port *port)
+@@ -1645,6 +1670,10 @@ static int create_sysfs_attrs(struct usb_serial_port *port)
  						    &dev_attr_latency_timer);
  		}
  	}
-+	
-+	if ((!retval) && (priv->chip_type == FT232RL)) {
++
++	if ((!retval) && (priv->chip_type == FT232RL))
 +		retval = device_create_file(&port->dev, &dev_attr_id);
-+	}
 +
  	return retval;
  }
