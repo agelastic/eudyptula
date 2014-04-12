@@ -1,0 +1,32 @@
+From 71091d65d0f1df108935ce55545486989a0a9983 Mon Sep 17 00:00:00 2001
+From: Vitaly Osipov <vitaly.osipov@gmail.com>
+Date: Thu, 10 Apr 2014 18:51:25 +1000
+Subject: [PATCH v2 2/2] staging: media: omap24xx: use pr_info() instead of KERN_INFO
+
+tcm825x.c:
+
+changed printk to pr_info
+
+Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
+---
+ drivers/staging/media/omap24xx/tcm825x.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/staging/media/omap24xx/tcm825x.c b/drivers/staging/media/omap24xx/tcm825x.c
+index 2326481..3367ccd 100644
+--- a/drivers/staging/media/omap24xx/tcm825x.c
++++ b/drivers/staging/media/omap24xx/tcm825x.c
+@@ -914,8 +914,8 @@ static int __init tcm825x_init(void)
+ 
+ 	rval = i2c_add_driver(&tcm825x_i2c_driver);
+ 	if (rval)
+-		printk(KERN_INFO "%s: failed registering " TCM825X_NAME "\n",
+-		       __func__);
++		pr_info("%s: failed registering " TCM825X_NAME "\n",
++			__func__);
+ 
+ 	return rval;
+ }
+-- 
+1.7.9.5
+
