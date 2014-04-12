@@ -1,0 +1,4 @@
+ls -la /sys/devices/pci0000:00/0000:00:11.0/0000:02:00.0/usb2/2-2/2-2.1/2-2.1:1.0/ttyUSB0
+cat /sys/devices/pci0000:00/0000:00:11.0/0000:02:00.0/usb2/2-2/2-2.1/2-2.1:1.0/ttyUSB0/id
+echo "7c1caf2f50d1" > /sys/devices/pci0000:00/0000:00:11.0/0000:02:00.0/usb2/2-2/2-2.1/2-2.1:1.0/ttyUSB0/id
+echo "blah" >  /sys/devices/pci0000:00/0000:00:11.0/0000:02:00.0/usb2/2-2/2-2.1/2-2.1:1.0/ttyUSB0/id

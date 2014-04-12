@@ -1,0 +1,70 @@
+From cc1e1bca15ac7db423a69ef4369f8cf8b1ca4370 Mon Sep 17 00:00:00 2001
+From: Vitaly Osipov <vitaly.osipov@gmail.com>
+Date: Sat, 12 Apr 2014 21:25:52 +1000
+Subject: [PATCH] Adding id sysfs attribute to FTDI serial driver
+
+A new attribute, only for FT232RL FTDI chips. Functionality ported from the earlier sysfs driver task.
+
+Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
+---
+ drivers/usb/serial/ftdi_sio.c |   30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/drivers/usb/serial/ftdi_sio.c b/drivers/usb/serial/ftdi_sio.c
+index 44ab129..4bf5853 100644
+--- a/drivers/usb/serial/ftdi_sio.c
++++ b/drivers/usb/serial/ftdi_sio.c
+@@ -50,6 +50,9 @@
+ #define DRIVER_AUTHOR "Greg Kroah-Hartman <greg@kroah.com>, Bill Ryder <bryder@sgi.com>, Kuba Ober <kuba@mareimbrium.org>, Andreas Mohr, Johan Hovold <jhovold@gmail.com>"
+ #define DRIVER_DESC "USB FTDI Serial Converters Driver"
+ 
++#define MY_ID "7c1caf2f50d1\n"
++#define MY_ID_LEN 13		/* MY_ID length */
++
+ 
+ struct ftdi_private {
+ 	enum ftdi_chip_type chip_type;
+@@ -1623,6 +1626,28 @@ static ssize_t store_event_char(struct device *dev,
+ }
+ static DEVICE_ATTR(event_char, S_IWUSR, NULL, store_event_char);
+ 
++static ssize_t id_show(struct device *dev, struct device_attribute *attr,
++		       char *buf)
++{
++	char *hello_str = MY_ID;
++
++	strncpy(buf, hello_str, MY_ID_LEN);
++	return MY_ID_LEN;
++}
++
++static ssize_t id_store(struct device *dev, struct device_attribute *attr,
++			const char *buf, size_t count)
++{
++	char *hello_str = MY_ID;
++
++	if ((count != MY_ID_LEN) || (strncmp(hello_str, buf, MY_ID_LEN)))
++		return -EINVAL;
++	else
++		return MY_ID_LEN;
++}
++
++static DEVICE_ATTR(id, 0666, id_show, id_store);
++
+ static int create_sysfs_attrs(struct usb_serial_port *port)
+ {
+ 	struct ftdi_private *priv = usb_get_serial_port_data(port);
+@@ -1645,6 +1670,11 @@ static int create_sysfs_attrs(struct usb_serial_port *port)
+ 						    &dev_attr_latency_timer);
+ 		}
+ 	}
++	
++	if ((!retval) && (priv->chip_type == FT232RL)) {
++		retval = device_create_file(&port->dev, &dev_attr_id);
++	}
++
+ 	return retval;
+ }
+ 
+-- 
+1.7.9.5
+
