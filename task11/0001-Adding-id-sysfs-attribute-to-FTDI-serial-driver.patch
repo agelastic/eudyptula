@@ -1,4 +1,4 @@
-From b37c98ddd1b8cd471d02d48102f0f917f271ea0a Mon Sep 17 00:00:00 2001
+From 7de7aa2bcd09e70cef040a764024cd3e18f333d5 Mon Sep 17 00:00:00 2001
 From: Vitaly Osipov <vitaly.osipov@gmail.com>
 Date: Sat, 12 Apr 2014 21:25:52 +1000
 Subject: [PATCH] Adding id sysfs attribute to FTDI serial driver
@@ -7,31 +7,11 @@ A new attribute, only for FT232RL FTDI chips. Functionality ported from the earl
 
 Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
 ---
-vosipov@ubuntu:~/kernel/eudyptula/task11$ ls -la /sys/devices/pci0000:00/0000:00:11.0/0000:02:00.0/usb2/2-2/2-2.1/2-2.1:1.0/ttyUSB0
-total 0
-drwxr-xr-x 4 root root    0 Apr 12 21:17 .
-drwxr-xr-x 6 root root    0 Apr 12 21:17 ..
-lrwxrwxrwx 1 root root    0 Apr 12 21:17 driver -> ../../../../../../../../../bus/usb-serial/drivers/ftdi_sio
---w------- 1 root root 4096 Apr 12 21:17 event_char
--rw-rw-rw- 1 root root 4096 Apr 12 21:17 id
--rw-r--r-- 1 root root 4096 Apr 12 21:17 latency_timer
--r--r--r-- 1 root root 4096 Apr 12 21:17 port_number
-drwxr-xr-x 2 root root    0 Apr 12 21:17 power
-lrwxrwxrwx 1 root root    0 Apr 12 21:17 subsystem -> ../../../../../../../../../bus/usb-serial
-drwxr-xr-x 3 root root    0 Apr 12 21:17 tty
--rw-r--r-- 1 root root 4096 Apr 12 21:17 uevent
-vosipov@ubuntu:~/kernel/eudyptula/task11$ cat /sys/devices/pci0000:00/0000:00:11.0/0000:02:00.0/usb2/2-2/2-2.1/2-2.1:1.0/ttyUSB0/id
-7c1caf2f50d1
-vosipov@ubuntu:~/kernel/eudyptula/task11$ echo "7c1caf2f50d1" > /sys/devices/pci0000:00/0000:00:11.0/0000:02:00.0/usb2/2-2/2-2.1/2-2.1:1.0/ttyUSB0/id
-vosipov@ubuntu:~/kernel/eudyptula/task11$ echo "blah" > /sys/devices/pci0000:00/0000:00:11.0/0000:02:00.0/usb2/2-2/2-2.1/2-2.1:1.0/ttyUSB0/id
-bash: echo: write error: Invalid argument
-vosipov@ubuntu:~/kernel/eudyptula/task11$
-
- drivers/usb/serial/ftdi_sio.c |   29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ drivers/usb/serial/ftdi_sio.c |   31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
 diff --git a/drivers/usb/serial/ftdi_sio.c b/drivers/usb/serial/ftdi_sio.c
-index 44ab129..3785076 100644
+index 44ab129..53c7d14 100644
 --- a/drivers/usb/serial/ftdi_sio.c
 +++ b/drivers/usb/serial/ftdi_sio.c
 @@ -50,6 +50,9 @@
@@ -82,6 +62,15 @@ index 44ab129..3785076 100644
 +		retval = device_create_file(&port->dev, &dev_attr_id);
 +
  	return retval;
+ }
+ 
+@@ -1665,6 +1694,8 @@ static void remove_sysfs_attrs(struct usb_serial_port *port)
+ 			device_remove_file(&port->dev, &dev_attr_latency_timer);
+ 		}
+ 	}
++	if (priv->chip_type == FT232RL)
++		device_remove_file(&port->dev, &dev_attr_id);
+ 
  }
  
 -- 
