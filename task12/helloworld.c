@@ -47,7 +47,7 @@ int identity_create(char *name, int id)
 	strncpy(temp->name, name, NAME_LEN);
 	temp->name[NAME_LEN-1] = '\0';
 	temp->id = id;
-	temp->busy = true;
+	temp->busy = false;
 	list_add(&(temp->list), &identity_list);
 	retval = 0;
 
