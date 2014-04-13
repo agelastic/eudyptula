@@ -20,6 +20,8 @@ struct identity {
 
 static LIST_HEAD(identity_list);
 
+static struct kmem_cache *identity_cache;
+
 struct identity *identity_find(int id)
 {
 	struct identity *temp;
@@ -40,7 +42,7 @@ int identity_create(char *name, int id)
 	if (identity_find(id))
 		goto out;
 
-	temp = kmalloc(sizeof(*temp), GFP_KERNEL);
+	temp = kmem_cache_alloc(identity_cache, GFP_KERNEL);
 	if (!temp)
 		goto out;
 
@@ -69,7 +71,7 @@ void identity_destroy(int id)
 	pr_debug("destroying identity %i: %s\n", temp->id, temp->name);
 
 	list_del(&(temp->list));
-	kfree(temp);
+	kmem_cache_free(identity_cache, temp);
 
 	return;
 }
@@ -79,6 +81,12 @@ static int hello_init(void)
 	struct identity *temp;
 
 	pr_debug("Hello World!\n");
+
+	identity_cache = kmem_cache_create("identity",
+					   sizeof(struct identity),
+					   0, 0, NULL);
+	if (!identity_cache)
+		return -ENOMEM;
 
 	if (identity_create("Alice", 1))
 		pr_debug("error creating Alice\n");
@@ -108,6 +116,9 @@ static int hello_init(void)
 static void hello_exit(void)
 {
 	pr_debug("See you later.\n");
+
+	if (identity_cache)
+		kmem_cache_destroy(identity_cache);
 }
 
 module_init(hello_init);

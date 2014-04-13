@@ -1,0 +1,4 @@
+# remember to reboot with slub_nomerge kernel parameter
+sudo insmod ./helloworld.ko
+sudo cat /proc/slabinfo |grep identity
+sudo rmmod -f helloworld
