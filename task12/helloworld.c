@@ -5,29 +5,73 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/list.h>
+#include <linux/string.h>
+#include <linux/err.h>
+#include <linux/slab.h>
+
+#define NAME_LEN 20
 
 struct identity {
-	char name[20];
+	char name[NAME_LEN];
 	int id;
 	bool busy;
-	struct list_head list; 
+	struct list_head list;
 };
 
 static LIST_HEAD(identity_list);
 
-int identity_create(char *name, int id)
-{
-//TODO
-}
-
 struct identity *identity_find(int id)
 {
-//TODO
+	struct identity *temp;
+
+	list_for_each_entry(temp, &identity_list, list) {
+		if (temp->id == id)
+			return temp;
+	}
+
+	return NULL;
 }
 
-int *identity_destroy(int id)
+int identity_create(char *name, int id)
 {
-//TODO
+	struct identity *temp;
+	int retval = -EINVAL;
+
+	if (identity_find(id))
+		goto out;
+
+	temp = kmalloc(sizeof(*temp), GFP_KERNEL);
+	if (!temp)
+		goto out;
+
+	strncpy(temp->name, name, NAME_LEN);
+	temp->name[NAME_LEN-1] = '\0';
+	temp->id = id;
+	temp->busy = true;
+	list_add(&(temp->list), &identity_list);
+	retval = 0;
+
+	pr_debug("identity %d: %s created\n", id, name);
+
+out:	return retval;
+
+}
+
+void identity_destroy(int id)
+{
+	struct identity *temp;
+
+	temp = identity_find(id);
+
+	if (!temp)
+		return;
+
+	pr_debug("destroying identity %i: %s\n", temp->id, temp->name);
+
+	list_del(&(temp->list));
+	kfree(temp);
+
+	return;
 }
 
 static int hello_init(void)
@@ -35,10 +79,15 @@ static int hello_init(void)
 	struct identity *temp;
 
 	pr_debug("Hello World!\n");
-	identity_create("Alice", 1);
-	identity_create("Bob", 2);
-	identity_create("Dave", 3);
-	identity_create("Gena", 10);
+
+	if (identity_create("Alice", 1))
+		pr_debug("error creating Alice\n");
+	if (identity_create("Bob", 2))
+		pr_debug("error creating Bob\n");
+	if (identity_create("Dave", 3))
+		pr_debug("error creating Dave\n");
+	if (identity_create("Gena", 10))
+		pr_debug("error creating Gena\n");
 
 	temp = identity_find(3);
 	pr_debug("id 3 = %s\n", temp->name);
@@ -50,7 +99,7 @@ static int hello_init(void)
 	identity_destroy(2);
 	identity_destroy(1);
 	identity_destroy(10);
-	identity_destroy(42); /* this should return an error */
+	identity_destroy(42);
 	identity_destroy(3);
 
 	return 0;

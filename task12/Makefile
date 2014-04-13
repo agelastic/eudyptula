@@ -1,7 +1,12 @@
-obj-m += helloworld.o
-KDIR := /lib/modules/$(shell uname -r)/build
+CFLAGS_helloworld.o = -DDEBUG
 
-all:
+obj-m += helloworld.o
+
+KDIR ?= /lib/modules/$(shell uname -r)/build
+# KDIR ?=../linux
+PWD := $(shell pwd)
+
+default:
 	$(MAKE) -C $(KDIR) M=$(PWD) modules
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
