@@ -1,4 +1,4 @@
-From e99413130be2146ec4d6eaaa32e29e94e9392626 Mon Sep 17 00:00:00 2001
+From ce65e9c4d871a93e2810f75aff896f8e6627f688 Mon Sep 17 00:00:00 2001
 From: Vitaly Osipov <vitaly.osipov@gmail.com>
 Date: Mon, 14 Apr 2014 17:23:41 +1000
 Subject: [PATCH] kernel: add id field to task_struct
@@ -8,16 +8,16 @@ challenge
 
 Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
 ---
- fs/proc/base.c        |   27 +++++++++++++++++++++++++++
+ fs/proc/base.c        |   35 +++++++++++++++++++++++++++++++++++
  include/linux/sched.h |    1 +
  kernel/fork.c         |    1 +
- 3 files changed, 29 insertions(+)
+ 3 files changed, 37 insertions(+)
 
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 2d696b0..9276839 100644
+index 2d696b0..e5b537c 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
-@@ -2539,6 +2539,32 @@ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
+@@ -2539,6 +2539,40 @@ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
  	return err;
  }
  
@@ -27,20 +27,28 @@ index 2d696b0..9276839 100644
 +	struct task_struct *task = get_proc_task(file_inode(file));
 +
 +	int len;
-+	char id[20];
++	char id[18];
++	int retval = -EINVAL;
 +
-+	if (*ppos != 0)
-+		return 0;
++	if (!task)
++		goto out_notask;
++
++	if (*ppos != 0) {
++		retval = 0;
++		goto out;
++	}
 +
 +	len = sprintf(id, "%llx\n", task->id);
-+
-+	if (copy_to_user(buf, id, 20))
-+		return -EINVAL;
++	if (copy_to_user(buf, id, 18))
++		goto out;
 +
 +	task->id++;
 +	*ppos += len;
-+
-+	return len;
++	retval = len;
++out:
++	put_task_struct(task);
++out_notask:
++	return retval;
 +}
 +
 +static const struct file_operations proc_eudy_id_operations = {
@@ -50,7 +58,7 @@ index 2d696b0..9276839 100644
  /*
   * Thread groups
   */
-@@ -2638,6 +2664,7 @@ static const struct pid_entry tgid_base_stuff[] = {
+@@ -2638,6 +2672,7 @@ static const struct pid_entry tgid_base_stuff[] = {
  #ifdef CONFIG_CHECKPOINT_RESTORE
  	REG("timers",	  S_IRUGO, proc_timers_operations),
  #endif
