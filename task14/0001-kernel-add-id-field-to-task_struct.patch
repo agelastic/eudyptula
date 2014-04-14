@@ -1,0 +1,65 @@
+From 74b6cd72b60fbd8b37ffab714be61a6880810e54 Mon Sep 17 00:00:00 2001
+From: Vitaly Osipov <vitaly.osipov@gmail.com>
+Date: Mon, 14 Apr 2014 17:23:41 +1000
+Subject: [PATCH] kernel: add id field to task_struct
+
+Added a field that behaves as described in task 14 of the Eudyptula
+challenge
+
+Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
+---
+ fs/proc/base.c        |    5 +++++
+ include/linux/sched.h |    1 +
+ kernel/fork.c         |    1 +
+ 3 files changed, 7 insertions(+)
+
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 2d696b0..509a0c7 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -2539,6 +2539,10 @@ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
+ 	return err;
+ }
+ 
++static int eudyptula_id(struct task_struct *task, char *buffer)
++{
++	return sprintf(buffer, "%llx\n", task->id++);
++}
+ /*
+  * Thread groups
+  */
+@@ -2638,6 +2642,7 @@ static const struct pid_entry tgid_base_stuff[] = {
+ #ifdef CONFIG_CHECKPOINT_RESTORE
+ 	REG("timers",	  S_IRUGO, proc_timers_operations),
+ #endif
++	INF("id", S_IRUGO, eudyptula_id),
+ };
+ 
+ static int proc_tgid_base_readdir(struct file *file, struct dir_context *ctx)
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 25f54c7..4630104 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1607,6 +1607,7 @@ struct task_struct {
+ 	unsigned int	sequential_io;
+ 	unsigned int	sequential_io_avg;
+ #endif
++	u64 id;
+ };
+ 
+ /* Future-safe accessor for struct task_struct's cpus_allowed. */
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 54a8d26..2262455 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1316,6 +1316,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	p->sequential_io_avg	= 0;
+ #endif
+ 
++	p->id = 0x7c1caf2f50d1;
+ 	/* Perform scheduler related setup. Assign this task to a CPU. */
+ 	retval = sched_fork(clone_flags, p);
+ 	if (retval)
+-- 
+1.7.9.5
+
