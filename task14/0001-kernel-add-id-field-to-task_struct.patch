@@ -1,4 +1,4 @@
-From 74b6cd72b60fbd8b37ffab714be61a6880810e54 Mon Sep 17 00:00:00 2001
+From e99413130be2146ec4d6eaaa32e29e94e9392626 Mon Sep 17 00:00:00 2001
 From: Vitaly Osipov <vitaly.osipov@gmail.com>
 Date: Mon, 14 Apr 2014 17:23:41 +1000
 Subject: [PATCH] kernel: add id field to task_struct
@@ -8,31 +8,53 @@ challenge
 
 Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
 ---
- fs/proc/base.c        |    5 +++++
+ fs/proc/base.c        |   27 +++++++++++++++++++++++++++
  include/linux/sched.h |    1 +
  kernel/fork.c         |    1 +
- 3 files changed, 7 insertions(+)
+ 3 files changed, 29 insertions(+)
 
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 2d696b0..509a0c7 100644
+index 2d696b0..9276839 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
-@@ -2539,6 +2539,10 @@ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
+@@ -2539,6 +2539,32 @@ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
  	return err;
  }
  
-+static int eudyptula_id(struct task_struct *task, char *buffer)
++static ssize_t eudy_id_read(struct file *file, char __user *buf,
++			size_t count, loff_t *ppos)
 +{
-+	return sprintf(buffer, "%llx\n", task->id++);
++	struct task_struct *task = get_proc_task(file_inode(file));
++
++	int len;
++	char id[20];
++
++	if (*ppos != 0)
++		return 0;
++
++	len = sprintf(id, "%llx\n", task->id);
++
++	if (copy_to_user(buf, id, 20))
++		return -EINVAL;
++
++	task->id++;
++	*ppos += len;
++
++	return len;
 +}
++
++static const struct file_operations proc_eudy_id_operations = {
++	.read = eudy_id_read,
++};
++
  /*
   * Thread groups
   */
-@@ -2638,6 +2642,7 @@ static const struct pid_entry tgid_base_stuff[] = {
+@@ -2638,6 +2664,7 @@ static const struct pid_entry tgid_base_stuff[] = {
  #ifdef CONFIG_CHECKPOINT_RESTORE
  	REG("timers",	  S_IRUGO, proc_timers_operations),
  #endif
-+	INF("id", S_IRUGO, eudyptula_id),
++	REG("id", S_IRUGO, proc_eudy_id_operations),
  };
  
  static int proc_tgid_base_readdir(struct file *file, struct dir_context *ctx)
