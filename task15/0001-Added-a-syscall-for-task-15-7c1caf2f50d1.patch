@@ -1,0 +1,80 @@
+From f21d2594306d73d69f505b14aad73bbdeecdfd06 Mon Sep 17 00:00:00 2001
+From: Vitaly Osipov <vitaly.osipov@gmail.com>
+Date: Tue, 15 Apr 2014 15:00:24 +1000
+Subject: [PATCH] Added a syscall for task 15 (7c1caf2f50d1)
+
+Added sys_eudyptula call as described in the task. This is on x86_64
+architecture. The next available non-32bit-specific call number was 317
+
+Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
+---
+ arch/x86/kernel/Makefile         |    4 ++++
+ arch/x86/kernel/eudyptula.c      |   19 +++++++++++++++++++
+ arch/x86/syscalls/syscall_64.tbl |    2 +-
+ include/linux/syscalls.h         |    1 +
+ 4 files changed, 25 insertions(+), 1 deletion(-)
+ create mode 100644 arch/x86/kernel/eudyptula.c
+
+diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
+index f4d9600..60128b8 100644
+--- a/arch/x86/kernel/Makefile
++++ b/arch/x86/kernel/Makefile
+@@ -116,3 +116,7 @@ ifeq ($(CONFIG_X86_64),y)
+ 	obj-$(CONFIG_PCI_MMCONFIG)	+= mmconf-fam10h_64.o
+ 	obj-y				+= vsmp_64.o
+ endif
++
++###
++# Eudyptula syscall
++obj-y					+=eudyptula.o
+diff --git a/arch/x86/kernel/eudyptula.c b/arch/x86/kernel/eudyptula.c
+new file mode 100644
+index 0000000..4179b9f
+--- /dev/null
++++ b/arch/x86/kernel/eudyptula.c
+@@ -0,0 +1,19 @@
++#include <linux/kernel.h>
++#include <linux/syscalls.h>
++#include <linux/init.h>
++#include <linux/sched.h>
++
++/*
++  Syscall for task 15 of Eudyptula challenge. Adding on x86_64 architecture,
++  picked the next available non-32bit-specific call number.
++*/
++
++asmlinkage long sys_eudyptula(unsigned int hi_id, unsigned int lo_id)
++{
++	u64 my_id = 0x7c1caf2f50d1;
++
++	if (((u64)hi_id << 32 | lo_id) == my_id)
++		return 0;
++	else
++		return -1;
++}
+diff --git a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
+index 04376ac..a6d6a0c 100644
+--- a/arch/x86/syscalls/syscall_64.tbl
++++ b/arch/x86/syscalls/syscall_64.tbl
+@@ -323,7 +323,7 @@
+ 314	common	sched_setattr		sys_sched_setattr
+ 315	common	sched_getattr		sys_sched_getattr
+ 316	common	renameat2		sys_renameat2
+-
++317	64	eudyptula		sys_eudyptula
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+ # for native 64-bit operation.
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index a4a0588..d7a6b39 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -866,4 +866,5 @@ asmlinkage long sys_process_vm_writev(pid_t pid,
+ asmlinkage long sys_kcmp(pid_t pid1, pid_t pid2, int type,
+ 			 unsigned long idx1, unsigned long idx2);
+ asmlinkage long sys_finit_module(int fd, const char __user *uargs, int flags);
++asmlinkage long sys_eudyptula(unsigned int hi_id, unsigned int lo_id);
+ #endif
+-- 
+1.7.9.5
+
