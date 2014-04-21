@@ -1,4 +1,4 @@
-From f21d2594306d73d69f505b14aad73bbdeecdfd06 Mon Sep 17 00:00:00 2001
+From 113c02899ea274faea768434a926e4b312920223 Mon Sep 17 00:00:00 2001
 From: Vitaly Osipov <vitaly.osipov@gmail.com>
 Date: Tue, 15 Apr 2014 15:00:24 +1000
 Subject: [PATCH] Added a syscall for task 15 (7c1caf2f50d1)
@@ -9,10 +9,10 @@ architecture. The next available non-32bit-specific call number was 317
 Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
 ---
  arch/x86/kernel/Makefile         |    4 ++++
- arch/x86/kernel/eudyptula.c      |   19 +++++++++++++++++++
+ arch/x86/kernel/eudyptula.c      |   20 ++++++++++++++++++++
  arch/x86/syscalls/syscall_64.tbl |    2 +-
  include/linux/syscalls.h         |    1 +
- 4 files changed, 25 insertions(+), 1 deletion(-)
+ 4 files changed, 26 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/kernel/eudyptula.c
 
 diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
@@ -29,28 +29,29 @@ index f4d9600..60128b8 100644
 +obj-y					+=eudyptula.o
 diff --git a/arch/x86/kernel/eudyptula.c b/arch/x86/kernel/eudyptula.c
 new file mode 100644
-index 0000000..4179b9f
+index 0000000..9b66491
 --- /dev/null
 +++ b/arch/x86/kernel/eudyptula.c
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,20 @@
 +#include <linux/kernel.h>
 +#include <linux/syscalls.h>
 +#include <linux/init.h>
 +#include <linux/sched.h>
++#include <linux/errno.h>
 +
 +/*
 +  Syscall for task 15 of Eudyptula challenge. Adding on x86_64 architecture,
 +  picked the next available non-32bit-specific call number.
 +*/
 +
-+asmlinkage long sys_eudyptula(unsigned int hi_id, unsigned int lo_id)
++SYSCALL_DEFINE2(eudyptula, unsigned int, hi_id, unsigned int, lo_id)
 +{
 +	u64 my_id = 0x7c1caf2f50d1;
 +
 +	if (((u64)hi_id << 32 | lo_id) == my_id)
 +		return 0;
 +	else
-+		return -1;
++		return -EPERM;
 +}
 diff --git a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
 index 04376ac..a6d6a0c 100644
