@@ -9,7 +9,7 @@
 #define MY_ID "7c1caf2f50d1\n"
 #define MY_ID_LEN 13		/* MY_ID length */
 
-static DEFINE_SEMAPHORE(foo_sem);
+static DEFINE_MUTEX(foo_mutex);
 static char foo_data[PAGE_SIZE];
 static int foo_len;
 
@@ -18,9 +18,9 @@ static struct kobject *hello_kobj;
 static ssize_t foo_show(struct kobject *kobj, struct kobj_attribute *attr,
 			char *buf)
 {
-	down(&foo_sem);
+	mutex_lock(&foo_mutex);
 	strncpy(buf, foo_data, foo_len);
-	up(&foo_sem);
+	mutex_unlock(&foo_mutex);
 
 	return foo_len;
 }
@@ -31,10 +31,10 @@ static ssize_t foo_store(struct kobject *kobj, struct kobj_attribute *attr,
 	if (count > PAGE_SIZE)
 		return -EINVAL;
 
-	down(&foo_sem);
+	mutex_lock(&foo_mutex);
 	strncpy(foo_data, buf, count);
 	foo_len = count;
-	up(&foo_sem);
+	mutex_unlock(&foo_mutex);
 
 	return count;
 }
