@@ -1,0 +1,94 @@
+From 2f2c2577606cf3e01f6dee2628ba7fab46c004ac Mon Sep 17 00:00:00 2001
+From: Vitaly Osipov <vitaly.osipov@gmail.com>
+Date: Tue, 22 Apr 2014 22:58:43 +1000
+Subject: [PATCH] staging:lustre: replace int with gpf_t
+
+Fixed several sparse "warning: incorrect type" by replacing int
+declarations with gfp_t
+
+Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
+---
+ .../staging/lustre/include/linux/libcfs/libcfs.h   |    1 +
+ drivers/staging/lustre/lustre/libcfs/module.c      |    3 ++-
+ drivers/staging/lustre/lustre/libcfs/tracefile.c   |    4 ++--
+ drivers/staging/lustre/lustre/libcfs/tracefile.h   |    2 +-
+ .../staging/lustre/lustre/obdecho/echo_client.c    |    2 +-
+ 5 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/staging/lustre/include/linux/libcfs/libcfs.h b/drivers/staging/lustre/include/linux/libcfs/libcfs.h
+index 4a6c7da..26b53f6 100644
+--- a/drivers/staging/lustre/include/linux/libcfs/libcfs.h
++++ b/drivers/staging/lustre/include/linux/libcfs/libcfs.h
+@@ -42,6 +42,7 @@
+ #endif
+ 
+ #include <linux/libcfs/linux/libcfs.h>
++#include <linux/gfp.h>
+ 
+ #include "curproc.h"
+ 
+diff --git a/drivers/staging/lustre/lustre/libcfs/module.c b/drivers/staging/lustre/lustre/libcfs/module.c
+index 24ae26d..b16ee08 100644
+--- a/drivers/staging/lustre/lustre/libcfs/module.c
++++ b/drivers/staging/lustre/lustre/libcfs/module.c
+@@ -87,7 +87,8 @@ kportal_memhog_free (struct libcfs_device_userstate *ldu)
+ }
+ 
+ int
+-kportal_memhog_alloc (struct libcfs_device_userstate *ldu, int npages, int flags)
++kportal_memhog_alloc(struct libcfs_device_userstate *ldu, int npages,
++		     gfp_t flags)
+ {
+ 	struct page **level0p;
+ 	struct page **level1p;
+diff --git a/drivers/staging/lustre/lustre/libcfs/tracefile.c b/drivers/staging/lustre/lustre/libcfs/tracefile.c
+index c8599ee..50d4218 100644
+--- a/drivers/staging/lustre/lustre/libcfs/tracefile.c
++++ b/drivers/staging/lustre/lustre/libcfs/tracefile.c
+@@ -66,7 +66,7 @@ cfs_tage_from_list(struct list_head *list)
+ 	return list_entry(list, struct cfs_trace_page, linkage);
+ }
+ 
+-static struct cfs_trace_page *cfs_tage_alloc(int gfp)
++static struct cfs_trace_page *cfs_tage_alloc(gfp_t gfp)
+ {
+ 	struct page	    *page;
+ 	struct cfs_trace_page *tage;
+@@ -114,7 +114,7 @@ static void cfs_tage_to_tail(struct cfs_trace_page *tage,
+ 	list_move_tail(&tage->linkage, queue);
+ }
+ 
+-int cfs_trace_refill_stock(struct cfs_trace_cpu_data *tcd, int gfp,
++int cfs_trace_refill_stock(struct cfs_trace_cpu_data *tcd, gfp_t gfp,
+ 			   struct list_head *stock)
+ {
+ 	int i;
+diff --git a/drivers/staging/lustre/lustre/libcfs/tracefile.h b/drivers/staging/lustre/lustre/libcfs/tracefile.h
+index 7e8d17c..55ecfc9 100644
+--- a/drivers/staging/lustre/lustre/libcfs/tracefile.h
++++ b/drivers/staging/lustre/lustre/libcfs/tracefile.h
+@@ -307,7 +307,7 @@ cfs_trace_put_tcd (struct cfs_trace_cpu_data *tcd)
+ 	put_cpu();
+ }
+ 
+-int cfs_trace_refill_stock(struct cfs_trace_cpu_data *tcd, int gfp,
++int cfs_trace_refill_stock(struct cfs_trace_cpu_data *tcd, gfp_t gfp,
+ 			   struct list_head *stock);
+ 
+ 
+diff --git a/drivers/staging/lustre/lustre/obdecho/echo_client.c b/drivers/staging/lustre/lustre/obdecho/echo_client.c
+index 754aa8e..a7f5e41 100644
+--- a/drivers/staging/lustre/lustre/obdecho/echo_client.c
++++ b/drivers/staging/lustre/lustre/obdecho/echo_client.c
+@@ -2432,7 +2432,7 @@ static int echo_client_kbrw(struct echo_device *ed, int rw, struct obdo *oa,
+ 	int		     i;
+ 	int		     rc;
+ 	int		     verify;
+-	int		     gfp_mask;
++	gfp_t		     gfp_mask;
+ 	int		     brw_flags = 0;
+ 
+ 	verify = (ostid_id(&oa->o_oi) != ECHO_PERSISTENT_OBJID &&
+-- 
+1.7.9.5
+
