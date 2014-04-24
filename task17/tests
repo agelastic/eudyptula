@@ -1,0 +1,6 @@
+sudo insmod ./helloworld.ko
+ls -la /dev/eudyptula
+ps -ef |grep eudyptula
+sudo rmmod helloworld
+ls -la /dev/eudyptula
+ps -ef |grep eudyptula
