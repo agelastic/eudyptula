@@ -55,24 +55,22 @@ struct identity *identity_find(int id)
 int identity_create(char *name, int id)
 {
 	struct identity *temp;
-	int retval = -EINVAL;
 
 	if (identity_find(id))
-		goto out;
+		return -EINVAL;
 
 	temp = kmalloc(sizeof(*temp), GFP_KERNEL);
 	if (!temp)
-		goto out;
+		return -EINVAL;
 
 	strncpy(temp->name, name, NAME_LEN-1);
 	temp->name[NAME_LEN-1] = '\0';
 	temp->id = id;
 	temp->busy = false;
 	list_add(&(temp->list), &identity_list);
-	retval = 0;
 	pr_debug("Created identity: %s %i\n", temp->name, temp->id);
 
-out:	return retval;
+	return 0;
 
 }
 
