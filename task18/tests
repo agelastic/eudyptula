@@ -1,0 +1,11 @@
+sudo insmod ./helloworld.ko
+ls -la /dev/eudyptula
+ps -ef |grep eudyptula
+echo -n "Alice" > /dev/eudyptula
+echo -n "Bob" > /dev/eudyptula
+sleep 15
+echo -n "Dave" > /dev/eudyptula
+echo -n "Gena" > /dev/eudyptula
+sudo rmmod helloworld
+ls -la /dev/eudyptula
+ps -ef |grep eudyptula
