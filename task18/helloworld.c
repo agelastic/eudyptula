@@ -7,7 +7,7 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
-#include <linux/semaphore.h>
+#include <linux/mutex.h>
 
 DECLARE_WAIT_QUEUE_HEAD(wee_wait);
 
