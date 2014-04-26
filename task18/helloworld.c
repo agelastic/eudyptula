@@ -25,7 +25,7 @@ struct identity {
 static LIST_HEAD(identity_list);
 static int counter;
 
-DEFINE_MUTEX(i_mutex);
+static DEFINE_MUTEX(i_mutex);
 
 struct identity *identity_get(void)
 {
@@ -34,8 +34,10 @@ struct identity *identity_get(void)
 	if (list_empty(&identity_list))
 		return NULL;
 
+	mutex_lock(&i_mutex);
 	temp = list_entry(identity_list.next, struct identity, list);
 	list_del(&temp->list);
+	mutex_unlock(&i_mutex);
 
 	return temp;
 }
@@ -63,13 +65,15 @@ int identity_create(char *name, int id)
 	if (!temp)
 		return -EINVAL;
 
+	mutex_lock(&i_mutex);
 	strncpy(temp->name, name, NAME_LEN-1);
 	temp->name[NAME_LEN-1] = '\0';
 	temp->id = id;
 	temp->busy = false;
 	list_add(&(temp->list), &identity_list);
-	pr_debug("Created identity: %s %i\n", temp->name, temp->id);
+	mutex_unlock(&i_mutex);
 
+	pr_debug("Created identity: %s %i\n", temp->name, temp->id);
 	return 0;
 
 }
@@ -100,9 +104,7 @@ static int thread_main(void *data)
 		if (kthread_should_stop())
 			break;
 
-		mutex_lock(&i_mutex);
 		temp = identity_get();
-		mutex_unlock(&i_mutex);
 
 		if (temp) {
 			msleep_interruptible(5000);
@@ -124,14 +126,10 @@ static ssize_t hello_write(struct file *file, char const __user *buf,
 	if (copy_from_user(input, buf, real_count))
 		return -EINVAL;
 
-	mutex_lock(&i_mutex);
-	if (identity_create(input, counter)) {
-		mutex_unlock(&i_mutex);
+	if (identity_create(input, counter))
 		return -EINVAL;
-	}
 
 	counter++;
-	mutex_unlock(&i_mutex);
 	wake_up(&wee_wait);
 	return count;
 }
