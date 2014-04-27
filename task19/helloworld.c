@@ -3,13 +3,33 @@
 #include <linux/kernel.h>
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
+#include <linux/ip.h>
+#include <linux/tcp.h>
+#include <linux/string.h>
 
 static unsigned int myhook(const struct nf_hook_ops *ops,
 			   struct sk_buff *skb,
 			   const struct net_device *in,
 			   const struct net_device *out,
-			   int (*okfn)(struct sk_buff *)) 
+			   int (*okfn)(struct sk_buff *))
 {
+	char *my_id = "7c1caf2f50d1";
+	char *data;
+	struct tcphdr *tcph;
+	struct iphdr *iph;
+
+	if (skb) {
+		iph = (struct iphdr *)skb_network_header(skb);
+
+		if (iph->protocol == 6) {
+			tcph = (struct tcphdr *) skb_transport_header(skb);
+			data = ((char *)tcph + (tcph->doff * 4));
+
+			if (strstr(data, my_id))
+				pr_debug("Sniffed my ID: %s\n", my_id);
+		}
+	}
+
 	return NF_ACCEPT;
 }
 
@@ -17,16 +37,18 @@ static struct nf_hook_ops euhooks =  {
 	.hook = myhook,
 	.hooknum = NF_INET_LOCAL_IN,
 	.pf = NFPROTO_IPV4,
-	.priority = NF_INE_PRI_FIRST
+	.priority = NF_IP_PRI_FIRST
 };
 
 static int __init hello_init(void)
 {
+	pr_debug("Registering hook\n");
 	return nf_register_hook(&euhooks);
 }
 
 static void __exit hello_exit(void)
 {
+	pr_debug("Unregistering hook\n");
 	nf_unregister_hook(&euhooks);
 }
 

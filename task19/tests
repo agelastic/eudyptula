@@ -1,0 +1,10 @@
+telnet 0 25
+helo localhost
+mail from: asd@localhost
+rcpt to: root@localhost
+data
+Testing testing 7c1caf2f50d1
+7c1caf2f50d1 again!
+.
+quit
+
