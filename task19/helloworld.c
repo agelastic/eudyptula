@@ -13,8 +13,8 @@ static unsigned int myhook(const struct nf_hook_ops *ops,
 			   const struct net_device *out,
 			   int (*okfn)(struct sk_buff *))
 {
-	char *my_id = "7c1caf2f50d1";
-	char *data;
+	unsigned char *my_id = "7c1caf2f50d1";
+	unsigned char *data;
 	struct tcphdr *tcph;
 	struct iphdr *iph;
 
@@ -22,10 +22,10 @@ static unsigned int myhook(const struct nf_hook_ops *ops,
 		iph = (struct iphdr *)skb_network_header(skb);
 
 		if (iph->protocol == 6) {
-			tcph = (struct tcphdr *) skb_transport_header(skb);
-			data = ((char *)tcph + (tcph->doff * 4));
+			tcph = (struct tcphdr *)skb_transport_header(skb);
+			data = ((unsigned char *)tcph + (tcph->doff * 4));
 
-			if (strstr(data, my_id))
+			if (strnstr(data, my_id, skb_tail_pointer(skb) - data))
 				pr_debug("Sniffed my ID: %s\n", my_id);
 		}
 	}
