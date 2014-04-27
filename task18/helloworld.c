@@ -9,7 +9,7 @@
 #include <linux/delay.h>
 #include <linux/mutex.h>
 
-DECLARE_WAIT_QUEUE_HEAD(wee_wait);
+static DECLARE_WAIT_QUEUE_HEAD(wee_wait);
 
 static struct task_struct *eudy_thread;
 
@@ -27,14 +27,14 @@ static int counter;
 
 static DEFINE_MUTEX(i_mutex);
 
-struct identity *identity_get(void)
+static struct identity *identity_get(void)
 {
 	struct identity *temp;
 
 	if (list_empty(&identity_list))
 		return NULL;
 
-	mutex_lock(&i_mutex);
+	mutex_lock_interruptible(&i_mutex);
 	temp = list_entry(identity_list.next, struct identity, list);
 	list_del(&temp->list);
 	mutex_unlock(&i_mutex);
@@ -42,7 +42,7 @@ struct identity *identity_get(void)
 	return temp;
 }
 
-struct identity *identity_find(int id)
+static struct identity *identity_find(int id)
 {
 	struct identity *temp;
 
@@ -54,7 +54,7 @@ struct identity *identity_find(int id)
 	return NULL;
 }
 
-int identity_create(char *name, int id)
+static int identity_create(char *name, int id)
 {
 	struct identity *temp;
 
@@ -65,7 +65,7 @@ int identity_create(char *name, int id)
 	if (!temp)
 		return -EINVAL;
 
-	mutex_lock(&i_mutex);
+	mutex_lock_interruptible(&i_mutex);
 	strncpy(temp->name, name, NAME_LEN-1);
 	temp->name[NAME_LEN-1] = '\0';
 	temp->id = id;
@@ -76,21 +76,6 @@ int identity_create(char *name, int id)
 	pr_debug("Created identity: %s %i\n", temp->name, temp->id);
 	return 0;
 
-}
-
-void identity_destroy(int id)
-{
-	struct identity *temp;
-
-	temp = identity_find(id);
-
-	if (!temp)
-		return;
-
-	list_del(&(temp->list));
-	kfree(temp);
-
-	return;
 }
 
 static int thread_main(void *data)
