@@ -6,6 +6,7 @@
 #include <linux/textsearch.h>
 
 #define MY_ID "7c1caf2f50d1"
+static	struct ts_config *conf;
 
 static unsigned int myhook(const struct nf_hook_ops *ops,
 			   struct sk_buff *skb,
@@ -15,18 +16,14 @@ static unsigned int myhook(const struct nf_hook_ops *ops,
 {
 	int pos;
 	struct ts_state state;
-	struct ts_config *conf;
 
-	conf = textsearch_prepare("kmp", MY_ID, 12, GFP_KERNEL, TS_AUTOLOAD);
-	if (IS_ERR(conf))
-		return NF_ACCEPT;
+	memset(&state, 0, sizeof(struct ts_state));
 
 	for (pos = skb_find_text(skb, 0, INT_MAX, conf, &state);
 	     pos != UINT_MAX;
 	     pos = textsearch_next(conf, &state))
 		pr_debug(MY_ID " at %d\n", pos);
 
-	textsearch_destroy(conf);
 	return NF_ACCEPT;
 }
 
@@ -40,12 +37,18 @@ static struct nf_hook_ops euhooks =  {
 static int __init hello_init(void)
 {
 	pr_debug("Registering hook\n");
+
+	conf = textsearch_prepare("kmp", MY_ID, 12, GFP_KERNEL, TS_AUTOLOAD);
+	if (IS_ERR(conf))
+		return PTR_ERR(conf);
+
 	return nf_register_hook(&euhooks);
 }
 
 static void __exit hello_exit(void)
 {
 	pr_debug("Unregistering hook\n");
+	textsearch_destroy(conf);
 	nf_unregister_hook(&euhooks);
 }
 
