@@ -21,8 +21,9 @@ static unsigned int myhook(const struct nf_hook_ops *ops,
 	if (IS_ERR(conf))
 		return NF_ACCEPT;
 
-	pos = skb_find_text(skb, 0, INT_MAX, conf, &state);
-	if (pos != UINT_MAX)
+	for (pos = skb_find_text(skb, 0, INT_MAX, conf, &state);
+	     pos != UINT_MAX;
+	     pos = textsearch_next(conf, &state))
 		pr_debug(MY_ID " at %d\n", pos);
 
 	textsearch_destroy(conf);
