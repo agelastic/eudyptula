@@ -3,9 +3,9 @@
 #include <linux/kernel.h>
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
-#include <linux/string.h>
+#include <linux/textsearch.h>
+
+#define MY_ID "7c1caf2f50d1"
 
 static unsigned int myhook(const struct nf_hook_ops *ops,
 			   struct sk_buff *skb,
@@ -13,23 +13,19 @@ static unsigned int myhook(const struct nf_hook_ops *ops,
 			   const struct net_device *out,
 			   int (*okfn)(struct sk_buff *))
 {
-	unsigned char *my_id = "7c1caf2f50d1";
-	unsigned char *data;
-	struct tcphdr *tcph;
-	struct iphdr *iph;
+	int pos;
+	struct ts_state state;
+	struct ts_config *conf;
 
-	if (skb) {
-		iph = (struct iphdr *)skb_network_header(skb);
+	conf = textsearch_prepare("kmp", MY_ID, 12, GFP_KERNEL, TS_AUTOLOAD);
+	if (IS_ERR(conf))
+		return NF_ACCEPT;
 
-		if (iph->protocol == 6) {
-			tcph = (struct tcphdr *)skb_transport_header(skb);
-			data = ((unsigned char *)tcph + (tcph->doff * 4));
+	pos = skb_find_text(skb, 0, INT_MAX, conf, &state);
+	if (pos != UINT_MAX)
+		pr_debug(MY_ID " at %d\n", pos);
 
-			if (strnstr(data, my_id, skb_tail_pointer(skb) - data))
-				pr_debug("Sniffed my ID: %s\n", my_id);
-		}
-	}
-
+	textsearch_destroy(conf);
 	return NF_ACCEPT;
 }
 
