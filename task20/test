@@ -1,0 +1,5 @@
+cp hd.img hd1.img
+sudo losetup /dev/loop0 ~/hd1.img
+sudo mount -tmsdos /dev/loop0 /mnt/myfloppy/
+sudo mlabel -i /dev/loop0 -s ::
+~/kernel/eudyptula/task20/test20
