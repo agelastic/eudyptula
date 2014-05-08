@@ -1,32 +1,32 @@
-From 790d9d1e4c9597f133a1c6d3be924b17955fdbcf Mon Sep 17 00:00:00 2001
+From c226d7ae2c4875e831aed3c0889230eac6fdf7d7 Mon Sep 17 00:00:00 2001
 From: Vitaly Osipov <vitaly.osipov@gmail.com>
 Date: Sat, 3 May 2014 23:05:05 +1000
 Subject: [PATCH] Add an ioctl to modify a fat32 volume label
 
-This patch adds an ioctl to msdos filesystems to modify a directory
-volume label. Partition labels are not modified. If there is no
-directory label, it will be created.
+This patch adds an ioctl to msdos filesystems to modify the FAT label.
+Both primary and backup boot sector volume IDs are updated. The directory
+volume label is modified if present, otherwise a new one is created in
+the file system.
 
 Signed-off-by: Vitaly Osipov <vitaly.osipov@gmail.com>
 ---
- fs/fat/dir.c                  |   85 +++++++++++++++++++++++++++++++++++++++++
+ fs/fat/dir.c                  |  119 +++++++++++++++++++++++++++++++++++++++++
  include/uapi/linux/msdos_fs.h |    2 +
- 2 files changed, 87 insertions(+)
+ 2 files changed, 121 insertions(+)
 
 diff --git a/fs/fat/dir.c b/fs/fat/dir.c
-index 3963ede..b627730 100644
+index 3963ede..643dee8 100644
 --- a/fs/fat/dir.c
 +++ b/fs/fat/dir.c
-@@ -780,6 +780,84 @@ static int fat_ioctl_readdir(struct inode *inode, struct file *file,
+@@ -780,6 +780,118 @@ static int fat_ioctl_readdir(struct inode *inode, struct file *file,
  	return ret;
  }
  
++/* Inspired by fat_scan() */
 +static int fat_find_volume_label(struct inode *inode,
 +				 struct fat_slot_info *sinfo)
 +{
 +	struct super_block *sb  = inode->i_sb;
-+/*	struct dentry *root_dentry = sb->s_root;
-+	struct inode *root_inode = root_dentry->d_inode;*/
 +
 +	sinfo->slot_off = 0;
 +	sinfo->bh = NULL;
@@ -46,9 +46,11 @@ index 3963ede..b627730 100644
 +{
 +	unsigned char newlabel[MSDOS_NAME];
 +	struct super_block *sb = dir->i_sb;
-+	struct msdos_sb_info *sbi = MSDOS_SB(dir->i_sb);
++	struct msdos_sb_info *sbi = MSDOS_SB(sb);
 +	struct fat_slot_info sinfo;
 +	struct msdos_dir_entry de;
++	struct buffer_head *bh, *bh1;
++	struct fat_boot_sector *b, *b1;
 +	struct timespec cur_time;
 +	struct inode *label_inode;
 +	__le16 time, date;
@@ -59,6 +61,7 @@ index 3963ede..b627730 100644
 +
 +	fat_time_unix2fat(sbi, &cur_time, &time, &date, NULL);
 +
++	/* Find directory volume label and change/create it */
 +	if (!fat_find_volume_label(dir, &sinfo)) {
 +		mutex_lock(&sbi->s_lock);
 +		memcpy(&sinfo.de->name, newlabel, MSDOS_NAME);
@@ -68,6 +71,7 @@ index 3963ede..b627730 100644
 +		iput(label_inode);
 +		mutex_unlock(&sbi->s_lock);
 +	} else {
++		/* Inspired by msdos_add_entry() */
 +		memset(&de, '\0', sizeof(de));
 +		memcpy(de.name, newlabel, MSDOS_NAME);
 +		de.attr = ATTR_VOLUME;
@@ -82,6 +86,7 @@ index 3963ede..b627730 100644
 +		de.size = 0;
 +
 +		mutex_lock(&sbi->s_lock);
++		/* fat_add_entries() handles FAT copies for us */
 +		err = fat_add_entries(dir, &de, 1, &sinfo);
 +		mutex_unlock(&sbi->s_lock);
 +
@@ -96,13 +101,43 @@ index 3963ede..b627730 100644
 +		(void)fat_sync_inode(dir);
 +	else
 +		mark_inode_dirty(dir);
++
++	/* Modify partition labels, inspired by fat_set_state() */
++	if ((sb->s_flags & MS_RDONLY) || (sbi->dirty))
++		return -ENOTTY;
++
++	bh = sb_bread(sb, 0);
++	if (bh == NULL)
++		return -ENOTTY;
++
++	b = (struct fat_boot_sector *) bh->b_data;
++
++	if (sbi->fat_bits == 32) {
++		memcpy(b->fat32.vol_label, newlabel, MSDOS_NAME);
++
++		bh1 = sb_bread(sb, b->fat32.backup_boot);
++		if (bh1) {
++			b1 = (struct fat_boot_sector *) bh1->b_data;
++			memcpy(b1->fat32.vol_label, newlabel, MSDOS_NAME);
++			mark_buffer_dirty(bh1);
++			sync_dirty_buffer(bh1);
++			brelse(bh1);
++		}
++	} else {
++		memcpy(b->fat16.vol_label, newlabel, MSDOS_NAME);
++	}
++
++	mark_buffer_dirty(bh);
++	sync_dirty_buffer(bh);
++	brelse(bh);
++
 +	return 0;
 +}
 +
  static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
  			  unsigned long arg)
  {
-@@ -796,6 +874,9 @@ static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
+@@ -796,6 +908,9 @@ static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
  		short_only = 0;
  		both = 1;
  		break;
@@ -112,7 +147,7 @@ index 3963ede..b627730 100644
  	default:
  		return fat_generic_ioctl(filp, cmd, arg);
  	}
-@@ -817,6 +898,7 @@ static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
+@@ -817,6 +932,7 @@ static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
  #ifdef CONFIG_COMPAT
  #define	VFAT_IOCTL_READDIR_BOTH32	_IOR('r', 1, struct compat_dirent[2])
  #define	VFAT_IOCTL_READDIR_SHORT32	_IOR('r', 2, struct compat_dirent[2])
@@ -120,7 +155,7 @@ index 3963ede..b627730 100644
  
  FAT_IOCTL_FILLDIR_FUNC(fat_compat_ioctl_filldir, compat_dirent)
  
-@@ -836,6 +918,9 @@ static long fat_compat_dir_ioctl(struct file *filp, unsigned cmd,
+@@ -836,6 +952,9 @@ static long fat_compat_dir_ioctl(struct file *filp, unsigned cmd,
  		short_only = 0;
  		both = 1;
  		break;
@@ -144,5 +179,5 @@ index e284ff9..f1199e0 100644
  struct fat_boot_sector {
  	__u8	ignored[3];	/* Boot strap short or near jump */
 -- 
-1.7.9.5
+1.7.10.4
 
